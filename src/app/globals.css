@@ -19,3 +19,16 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.title {
+	@apply text-6xl font-bold;
+	padding: 32px;
+}
+
+.main {
+	padding: 32px;
+}
+
+.main-row {
+	@apply flex;
+}
