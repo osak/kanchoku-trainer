@@ -1,7 +1,7 @@
 'use client';
 
 import { Game } from '@/game/main';
-import { polano, texts } from '@/game/text';
+import { polano, randChars, texts } from '@/game/text';
 import { tutStrokeTable } from '@/game/tut';
 import { ChangeEvent, useCallback, useEffect, useRef } from 'react';
 
@@ -19,6 +19,16 @@ export default function Home() {
 			gameRef.current?.setProblems(texts);
 		} else if (problemSet === 'polano') {
 			gameRef.current?.setProblems(polano);
+		} else if (problemSet === 'random') {
+			const problems = [];
+			for (let i = 0; i < 20; i++) {
+				let text = '';
+				for (let j = 0; j < 20; j++) {
+					text += randChars[0][Math.floor(Math.random() * randChars[0].length)];
+				}
+				problems.push(text);
+			}
+			gameRef.current?.setProblems(problems);
 		}
 	}, []);
 	const onLimitChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -45,6 +55,7 @@ export default function Home() {
 						<select name="problemSet" multiple onChange={onSelectProblemSet}>
 							<option value="aiueo">あめんぼあかいな</option>
 							<option value="polano">ポラーノの広場</option>
+							<option value="random">ランダム</option>
 						</select>
 						<div>
 							<input type='text' name='text' className='border rounded'/>
