@@ -19,10 +19,12 @@ export class Game {
 	private targetText: string = '';
 	private targetStrokes: Stroke[] = [];
 	private targetIndex: number = 0;
+	private seqMissCount: number = 0;
 
 	// Problem set
 	private problems: string[] = [];
 	private problemIndex: number = 0;
+	private totalMissCount: number = 0;
 
 	constructor(private readonly dom: HTMLCanvasElement) {
 		this.canvas = new Canvas(dom);
@@ -42,6 +44,7 @@ export class Game {
 					this.targetIndex++;
 					this.precomposition = '';
 					this.lastError = '';
+					this.seqMissCount = 0;
 					if (this.targetIndex == this.targetStrokes.length) {
 						this.nextProblem();
 					}
@@ -51,6 +54,8 @@ export class Game {
 				} else {
 					this.lastError = buf;
 					this.precomposition = '';
+					this.seqMissCount++;
+					this.totalMissCount++;
 				}
 			}
 			this.draw();
@@ -110,7 +115,9 @@ export class Game {
 
 		this.targetStrokes.forEach((stroke, i) => {
 			this.canvas.drawText(stroke.char, 100 + i * 50, 50, { fontSize: 40, color: this.getTextColor(i, this.targetIndex) });
-			this.canvas.drawText(stroke.sequence, 100 + i * 50, 90, { fontSize: 20, color: this.getSequenceColor(i, this.targetIndex) });
+			if (this.seqMissCount >= 3 && i == this.targetIndex) {
+				this.canvas.drawText(stroke.sequence, 100 + i * 50, 90, { fontSize: 20, color: this.getSequenceColor(i, this.targetIndex) });
+			}
 		});
 
 		if (this.lastError !== '' && this.precomposition === '') {
