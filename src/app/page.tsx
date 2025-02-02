@@ -21,6 +21,10 @@ export default function Home() {
 			gameRef.current?.setProblems(polano);
 		}
 	}, []);
+	const onLimitChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+		const limit = parseInt(e.currentTarget.value);
+		gameRef.current?.setSequenceMissLimit(limit);
+	}, []);
 
 	useEffect(() => {
 		if (ref.current) {
@@ -42,7 +46,13 @@ export default function Home() {
 							<option value="aiueo">あめんぼあかいな</option>
 							<option value="polano">ポラーノの広場</option>
 						</select>
-						<input type='text' name='text' className='border rounded'/>
+						<div>
+							<input type='text' name='text' className='border rounded'/>
+						</div>
+						<div>
+							<label htmlFor='limit'>Miss limit: </label>
+							<input type='number' name='limit' className='border rounded' onChange={onLimitChange}/>
+						</div>
 					</form>
 				</div>
 			</div>

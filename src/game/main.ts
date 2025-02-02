@@ -20,6 +20,7 @@ export class Game {
 	private targetStrokes: Stroke[] = [];
 	private targetIndex: number = 0;
 	private seqMissCount: number = 0;
+	private seqMissLimit: number = 3;
 
 	// Problem set
 	private problems: string[] = [];
@@ -100,6 +101,11 @@ export class Game {
 		this.setTargetText(this.problems[this.problemIndex]);
 	}
 
+	setSequenceMissLimit(limit: number) {
+		this.seqMissLimit = limit;
+		this.draw();
+	}
+
 	nextProblem() {
 		this.problemIndex++;
 		if (this.problemIndex < this.problems.length) {
@@ -115,8 +121,8 @@ export class Game {
 
 		this.targetStrokes.forEach((stroke, i) => {
 			this.canvas.drawText(stroke.char, 100 + i * 50, 50, { fontSize: 40, color: this.getTextColor(i, this.targetIndex) });
-			if (this.seqMissCount >= 3 && i == this.targetIndex) {
-				this.canvas.drawText(stroke.sequence, 100 + i * 50, 90, { fontSize: 20, color: this.getSequenceColor(i, this.targetIndex) });
+			if (this.seqMissCount >= this.seqMissLimit && i == this.targetIndex) {
+				this.canvas.drawText(stroke.sequence, 100 + i * 50, 70, { fontSize: 20, color: this.getSequenceColor(i, this.targetIndex) });
 			}
 		});
 
