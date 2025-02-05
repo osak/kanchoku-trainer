@@ -7,6 +7,15 @@ interface Stroke {
 	char: string;
 }
 
+export interface Performance {
+	typeCount: number;
+	missCount: number;
+	completionTimesMs: number[];
+}
+
+type GameEvent = 'problemSetFinished';
+type GameEventHandler = () => void;
+
 export class Game {
 	private readonly canvas: Canvas;
 	private strokeTable: StrokeTable = {};
@@ -21,11 +30,16 @@ export class Game {
 	private targetIndex: number = 0;
 	private seqMissCount: number = 0;
 	private seqMissLimit: number = 3;
+	private currentCharStartTime: number = 0;
 
 	// Problem set
 	private problems: string[] = [];
 	private problemIndex: number = 0;
 	private totalMissCount: number = 0;
+	private performanceByChar: { [char: string]: Performance } = {};
+
+	// Event handlers
+	private eventHandlers: Partial<Record<GameEvent, GameEventHandler[]>> = {};
 
 	constructor(private readonly dom: HTMLCanvasElement) {
 		this.canvas = new Canvas(dom);
@@ -42,13 +56,19 @@ export class Game {
 				const currentTarget = this.targetStrokes[this.targetIndex];
 				const buf = this.precomposition + e.key;
 				if (buf == currentTarget.sequence) {
+					this.recordPerformance(currentTarget.char, this.seqMissCount > 0, Date.now() - this.currentCharStartTime)
 					this.targetIndex++;
 					this.precomposition = '';
 					this.lastError = '';
 					this.seqMissCount = 0;
 					if (this.targetIndex == this.targetStrokes.length) {
-						this.nextProblem();
+						if (this.problemIndex == this.problems.length - 1) {
+							this.emitEvent('problemSetFinished');
+						} else {
+							this.nextProblem();
+						}
 					}
+					this.currentCharStartTime = Date.now();
 				} else if (currentTarget.sequence.startsWith(buf)) {
 					this.precomposition = buf;
 					this.lastError = '';
@@ -62,6 +82,13 @@ export class Game {
 			this.draw();
 		});
 		this.draw();
+	}
+
+	on(event: GameEvent, handler: GameEventHandler) {
+		if (!this.eventHandlers[event]) {
+			this.eventHandlers[event] = [];
+		}
+		this.eventHandlers[event]?.push(handler);
 	}
 
 	loadStrokeTable(table: StrokeTable) {
@@ -78,19 +105,21 @@ export class Game {
 		this.targetStrokes = [];
 		for (const char of targetText) {
 			const normalized = char.replace(/[\u30a1-\u30f6]/g, function(match) {
-				var chr = match.charCodeAt(0) - 0x60;
+				const chr = match.charCodeAt(0) - 0x60;
 				return String.fromCharCode(chr);
 			});
 			const sequence = this.reverseStrokeTable[normalized] || this.reverseStrokeTable[char];
 			this.targetStrokes.push({ sequence, char });
 		}
 		this.targetIndex = 0;
+		this.currentCharStartTime = Date.now();
 		this.draw();
 	}
 
 	setProblems(problems: string[]) {
 		this.problems = problems;
 		this.setProblem(0);
+		this.performanceByChar = {};
 	}
 
 	setProblem(idx: number) {
@@ -111,6 +140,10 @@ export class Game {
 		if (this.problemIndex < this.problems.length) {
 			this.setProblem(this.problemIndex);
 		}
+	}
+
+	getPerformanceTable(): typeof this.performanceByChar {
+		return this.performanceByChar;
 	}
 
 	draw() {
@@ -153,6 +186,27 @@ export class Game {
 			return 'gray';
 		} else {
 			throw new Error(`getTextColor failed: ${pos} ${currentTargetPos}`);
+		}
+	}
+
+	private recordPerformance(char: string, hasMiss: boolean, completionTimeMs: number) {
+		const performance = this.performanceByChar[char] ?? { typeCount: 0, missCount: 0, completionTimesMs: [] };
+		performance.typeCount++;
+		if (hasMiss) {
+			performance.missCount++;
+		}
+		performance.completionTimesMs.push(completionTimeMs);
+		this.performanceByChar[char] = performance;
+	}
+
+	private emitEvent(event: GameEvent) {
+		console.log('Emitting event:', event);
+		const handlers = this.eventHandlers[event];
+		if (!handlers) {
+			return;
+		}
+		for (const handler of handlers) {
+			handler();
 		}
 	}
 }
