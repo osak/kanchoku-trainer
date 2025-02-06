@@ -33,7 +33,7 @@ export default function Home() {
 			gameRef.current?.setProblems(polano);
 		} else if (problemSet === 'random') {
 			const problems = [];
-			for (let i = 0; i < 20; i++) {
+			for (let i = 0; i < 10; i++) {
 				let text = '';
 				for (let j = 0; j < 20; j++) {
 					text += randChars[0][Math.floor(Math.random() * randChars[0].length)];
@@ -49,7 +49,7 @@ export default function Home() {
 		const limit = parseInt(e.currentTarget.value);
 		gameRef.current?.setSequenceMissLimit(limit);
 	}, []);
-	const onProblemSetFinished = useCallback(() => {
+	const onProblemSetFinished = useCallback(async () => {
 		if (gameRef.current) {
 			const performanceTable = gameRef.current.getPerformanceTable();
 			const newMissCountRanking = Object.entries(performanceTable)
@@ -62,6 +62,18 @@ export default function Home() {
 			setSlowestCountRanking(newSlowestRanking);
 			console.log(newMissCountRanking);
 			console.log(newSlowestRanking);
+			const res = await fetch('/api/score', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					missCounts: newMissCountRanking,
+					times: newSlowestRanking,
+				}),
+			});
+			const { filename } = await res.json();
+			console.log(filename);
 		}
 	}, [setMissCountRanking, setSlowestCountRanking, gameRef]);
 
